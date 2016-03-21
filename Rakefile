@@ -16,6 +16,7 @@ task test: [:style, :spec]
 
 # Integration tests using Test Kitchen (http://kitchen.ci/)
 namespace :integration do
+
   desc 'Run Test Kitchen with Vagrant'
   task :vagrant do
     Kitchen.logger = Kitchen.default_file_logger
@@ -23,7 +24,22 @@ namespace :integration do
       instance.test(:always)
     end
   end
+
+  desc 'Run Test Kitchen with cloud plugins'
+  task :cloud, :pattern do
+    Kitchen.logger = Kitchen.default_file_logger
+    @loader = Kitchen::Loader::YAML.new(project_config: './.kitchen.cloud.yml')
+    config = Kitchen::Config.new(loader: @loader)
+    config.instances.each do |instance|
+      instance.test(:always)
+    end
+  end
 end
 
-# Default
+task :upload_to_chef do
+  sh 'berks install; berks upload'
+end
+
 task default: ['test', 'integration:vagrant']
+task ci: ['test', 'upload_to_chef']
+task cloud: ['test', 'integration:cloud', 'upload_to_chef']
