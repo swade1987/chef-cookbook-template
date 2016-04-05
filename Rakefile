@@ -40,6 +40,17 @@ task :upload_to_chef do
   sh 'berks install; berks upload'
 end
 
+# Execute the packer build to produce us a new AMI
+task packer: ['cleanup_berks_cookbooks', 'build_ami']
+
+task :cleanup_berks_cookbooks do
+  sh 'rm -rf berks-cookbooks/*'
+end
+
+task :build_ami do
+  sh 'berks vendor; packer validate template.json; packer build template.json'
+end
+
 task default: ['test', 'integration:vagrant']
 task ci: ['test', 'upload_to_chef']
 task cloud: ['test', 'integration:cloud', 'upload_to_chef']
