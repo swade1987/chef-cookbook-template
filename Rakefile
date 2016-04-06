@@ -41,14 +41,12 @@ task :upload_to_chef do
 end
 
 # Execute the packer build to produce us a new AMI
-task packer: ['cleanup_berks_cookbooks', 'build_ami']
-
-task :cleanup_berks_cookbooks do
+task :packer, :source_ami_id do |_, args|
+  puts args[:source_ami_id]
   sh 'rm -rf berks-cookbooks/*'
-end
-
-task :build_ami do
-  sh 'berks vendor; packer validate template.json; packer build template.json'
+  sh 'berks vendor'
+  sh 'packer validate template.json'
+  sh "packer build -var 'source_ami=#{args.source_ami_id}' template.json"
 end
 
 task default: ['test', 'integration:vagrant']
