@@ -40,13 +40,16 @@ task :upload_to_chef do
   sh 'berks install; berks upload'
 end
 
-# Execute the packer build to produce us a new AMI
 task :packer, :source_ami_id do |_, args|
   puts args[:source_ami_id]
   sh 'rm -rf berks-cookbooks/*'
   sh 'berks vendor'
   sh 'packer validate template.json'
-  sh "packer build -var 'source_ami=#{args.source_ami_id}' template.json"
+
+  # Execute Packer to store AMI ID in a file called 'ami-id'
+  sh "packer build -machine-readable -var 'source_ami=#{args.source_ami_id}' template.json | tee build.log"
+  @ami_id=`grep 'artifact,0,id' build.log | cut -d, -f6 | cut -d: -f2`.chomp
+  File.write('ami-id', @ami_id)
 end
 
 task default: ['test', 'integration:vagrant']
